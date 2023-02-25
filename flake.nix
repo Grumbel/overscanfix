@@ -28,6 +28,11 @@
 
             src = ./.;
 
+            nativeBuildInputs = [ pkgs.qt5.wrapQtAppsHook ];
+            makeWrapperArgs = [
+              "\${qtWrapperArgs[@]}"
+            ];
+
             preCheck = ''
               export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
             '';
