@@ -1,8 +1,8 @@
 import signal
 
 from PyQt5.QtWidgets import QApplication, QWidget, QAction
-from PyQt5.QtGui import QPainter, QBrush, QFont, QKeySequence
-from PyQt5.QtCore import Qt, QRect, QMargins
+from PyQt5.QtGui import QPainter, QBrush, QFont, QKeySequence, QPolygon
+from PyQt5.QtCore import Qt, QRect, QMargins, QPoint
 
 
 class MainWindow(QWidget):
@@ -20,17 +20,72 @@ class MainWindow(QWidget):
 
     def resizeEvent(self, event) -> None:
         self._rect = QRect(0, 0, self.width(), self.height())
-        print(f"show--- {self._rect}")
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
-        painter.setBrush(QBrush(Qt.red))
-        painter.setFont(QFont("Arial", 20))
+
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(Qt.black)
+
         painter.drawRect(self._rect)
 
-        painter.drawText(self.width() / 2, self.height() / 2,
-                         f"{self._rect.width()}x{self._rect.height()}\n"
-                         f"{self._rect.x(), self._rect.y()}")
+        left = self._rect.left()
+        top = self._rect.top()
+        right = self._rect.right()
+        bottom = self._rect.bottom()
+
+        tdist = 200
+
+        w = self._rect.width()
+        h = self._rect.height()
+
+        painter.setPen(Qt.gray)
+
+        painter.drawEllipse(left + tdist, top + tdist, w - tdist * 2, h - tdist * 2)
+
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(Qt.red)
+
+        triangles = [
+            # left
+            QPolygon([QPoint(left + tdist, top + h/2),
+                      QPoint(left, top + h/2 - tdist),
+                      QPoint(left, top + h/2 + tdist)
+                      ]),
+
+            # right
+            QPolygon([QPoint(right - tdist, top + h/2),
+                      QPoint(right, top + h/2 - tdist),
+                      QPoint(right, top + h/2 + tdist)
+                      ]),
+
+            # top
+            QPolygon([QPoint(left + w/2, top + tdist),
+                      QPoint(left + w/2 - tdist, top),
+                      QPoint(left + w/2 + tdist, top)
+                      ]),
+
+            # bottom
+            QPolygon([QPoint(left + w/2, bottom - tdist),
+                      QPoint(left + w/2 + tdist, bottom),
+                      QPoint(left + w/2 - tdist, bottom)
+                      ]),
+            ]
+
+        for triangle in triangles:
+            painter.drawPolygon(triangle)
+
+        painter.setPen(Qt.white)
+        painter.setFont(QFont("Arial", 20))
+        painter.drawText(self.width() / 2 - 100, self.height() / 2,
+                         f"size: {w}x{h}")
+        painter.drawText(self.width() / 2 - 100, self.height() / 2 + 32,
+                         f"pos: {left}, {top}")
+
+        painter.setPen(Qt.gray)
+        painter.setFont(QFont("Arial", 14))
+        painter.drawText(self.width() / 2 - 100, self.height() / 2 - 32,
+                         f"Use cursor keys and shift to move borders, Esc to quit")
 
     def keyPressEvent(self, event) -> None:
         if event.modifiers() & Qt.ShiftModifier:
