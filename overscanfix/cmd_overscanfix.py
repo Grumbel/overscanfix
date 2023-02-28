@@ -5,13 +5,32 @@ from PyQt5.QtGui import QPainter, QBrush, QFont, QKeySequence, QPolygon
 from PyQt5.QtCore import Qt, QRect, QMargins, QPoint
 
 
+def print_xrandr_cmd(screen_size: QRect, safezone: QRect) -> None:
+    sx = screen_size.width() / safezone.width()
+    sy = screen_size.height() / safezone.height()
+
+    left = safezone.left()
+    top = safezone.top()
+
+    # FIXME: Get the correct output and mode names
+    output = "HDMI-1"
+    mode = f"{screen_size.width()}x{screen_size.height()}"
+    fb = f"{screen_size.width()}x{screen_size.height()}"
+    print("xrandr " +
+          f"--output {output} " +
+          f"--mode {mode} " +
+          f"--fb {fb} " +
+          f"--transform {sx},0,{-left},0,{sy},{-top},0,0,1"
+          )
+
+
 class MainWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Rectangle")
         # self.setGeometry(100, 100, 300, 300)
-        self._rect: QRect = QRect(100, 100, 50, 50)
+        self._safezone: QRect = QRect(100, 100, 50, 50)
 
         quit_action = QAction('Quit', self)
         quit_action.setShortcut(QKeySequence('Esc'))
@@ -19,7 +38,7 @@ class MainWindow(QWidget):
         self.addAction(quit_action)
 
     def resizeEvent(self, event) -> None:
-        self._rect = QRect(0, 0, self.width(), self.height())
+        self._safezone = QRect(0, 0, self.width(), self.height())
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
@@ -27,17 +46,17 @@ class MainWindow(QWidget):
         painter.setPen(Qt.NoPen)
         painter.setBrush(Qt.black)
 
-        painter.drawRect(self._rect)
+        painter.drawRect(self._safezone)
 
-        left = self._rect.left()
-        top = self._rect.top()
-        right = self._rect.right()
-        bottom = self._rect.bottom()
+        left = self._safezone.left()
+        top = self._safezone.top()
+        right = self._safezone.right()
+        bottom = self._safezone.bottom()
 
         tdist = 200
 
-        w = self._rect.width()
-        h = self._rect.height()
+        w = self._safezone.width()
+        h = self._safezone.height()
 
         painter.setPen(Qt.gray)
 
@@ -90,33 +109,26 @@ class MainWindow(QWidget):
     def keyPressEvent(self, event) -> None:
         if event.modifiers() & Qt.ShiftModifier:
             if event.key() == Qt.Key_Left:
-                self._rect += QMargins(1, 0, 0, 0)
+                self._safezone += QMargins(1, 0, 0, 0)
             elif event.key() == Qt.Key_Right:
-                self._rect += QMargins(0, 0, 1, 0)
+                self._safezone += QMargins(0, 0, 1, 0)
             elif event.key() == Qt.Key_Up:
-                self._rect += QMargins(0, 1, 0, 0)
+                self._safezone += QMargins(0, 1, 0, 0)
             elif event.key() == Qt.Key_Down:
-                self._rect += QMargins(0, 0, 0, 1)
+                self._safezone += QMargins(0, 0, 0, 1)
         else:
             if event.key() == Qt.Key_Left:
-                self._rect -= QMargins(1, 0, 0, 0)
+                self._safezone -= QMargins(1, 0, 0, 0)
             elif event.key() == Qt.Key_Right:
-                self._rect -= QMargins(0, 0, 1, 0)
+                self._safezone -= QMargins(0, 0, 1, 0)
             elif event.key() == Qt.Key_Up:
-                self._rect -= QMargins(0, 1, 0, 0)
+                self._safezone -= QMargins(0, 1, 0, 0)
             elif event.key() == Qt.Key_Down:
-                self._rect -= QMargins(0, 0, 0, 1)
+                self._safezone -= QMargins(0, 0, 0, 1)
 
         self.update()
 
-        screen_size = self.screen().size()
-        x = self._rect.x()
-        y = self._rect.y()
-
-        print("xrandr --output HDMI-1 " +
-              f"--mode {screen_size.width()}x{screen_size.height()} " +
-              f"--fb {self._rect.width()}x{self._rect.height()} " +
-              f"--transform 1,0,{x},0,1,{y},0,0,1")
+        print_xrandr_cmd(self.screen().size(), self._safezone)
 
 
 def main_entrypoint():
