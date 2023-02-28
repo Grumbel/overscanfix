@@ -28,9 +28,8 @@ class MainWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("Rectangle")
-        # self.setGeometry(100, 100, 300, 300)
-        self._safezone: QRect = QRect(100, 100, 50, 50)
+        self.setWindowTitle("Overscan Fix")
+        self._safezone: QRect = QRect(0, 0, 1, 1)
 
         quit_action = QAction('Quit', self)
         quit_action.setShortcut(QKeySequence('Esc'))
