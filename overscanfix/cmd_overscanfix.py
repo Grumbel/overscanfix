@@ -61,49 +61,54 @@ class MainWindow(QWidget):
 
         painter.drawEllipse(left + tdist, top + tdist, w - tdist * 2, h - tdist * 2)
 
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(Qt.red)
-
         triangles = [
             # left
-            QPolygon([QPoint(left + tdist, top + h/2),
-                      QPoint(left, top + h/2 - tdist),
-                      QPoint(left, top + h/2 + tdist)
+            QPolygon([QPoint(left + tdist, top + h//2),
+                      QPoint(left, top + h//2 - tdist),
+                      QPoint(left, top + h//2 + tdist)
                       ]),
 
             # right
-            QPolygon([QPoint(right - tdist, top + h/2),
-                      QPoint(right, top + h/2 - tdist),
-                      QPoint(right, top + h/2 + tdist)
+            QPolygon([QPoint(right - tdist + 1, top + h//2),
+                      QPoint(right + 1, top + h//2 - tdist),
+                      QPoint(right + 1, top + h//2 + tdist)
                       ]),
 
             # top
-            QPolygon([QPoint(left + w/2, top + tdist),
-                      QPoint(left + w/2 - tdist, top),
-                      QPoint(left + w/2 + tdist, top)
+            QPolygon([QPoint(left + w//2, top + tdist),
+                      QPoint(left + w//2 - tdist, top),
+                      QPoint(left + w//2 + tdist, top)
                       ]),
 
             # bottom
-            QPolygon([QPoint(left + w/2, bottom - tdist),
-                      QPoint(left + w/2 + tdist, bottom),
-                      QPoint(left + w/2 - tdist, bottom)
+            QPolygon([QPoint(left + w//2, bottom - tdist + 1),
+                      QPoint(left + w//2 + tdist, bottom + 1),
+                      QPoint(left + w//2 - tdist, bottom + 1)
                       ]),
             ]
 
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(Qt.red)
         for triangle in triangles:
             painter.drawPolygon(triangle)
 
         painter.setPen(Qt.white)
         painter.setFont(QFont("Arial", 20))
-        painter.drawText(self.width() / 2 - 100, self.height() / 2,
+        text_x = self.width() / 2 - 200
+        painter.drawText(text_x, self.height() / 2 + 32,
                          f"size: {w}x{h}")
-        painter.drawText(self.width() / 2 - 100, self.height() / 2 + 32,
+        painter.drawText(text_x, self.height() / 2 + 64,
                          f"pos: {left}, {top}")
+
+        painter.drawText(text_x, self.height() / 2 + 96,
+                         f"border left: {left} right: {self.width() - right - 1} top: {top} bottom: {self.height() - bottom - 1}")
 
         painter.setPen(Qt.gray)
         painter.setFont(QFont("Arial", 14))
-        painter.drawText(self.width() / 2 - 100, self.height() / 2 - 32,
-                         f"Use cursor keys and shift to move borders, Esc to quit")
+        painter.drawText(text_x, self.height() / 2 - 32,
+                         f"Use cursor keys and shift to adjust borders, Esc to quit")
+        painter.drawText(text_x, self.height() / 2 - 64,
+                         "Adjust until only a thin white line is visible at the edge")
 
     def keyPressEvent(self, event) -> None:
         if event.modifiers() & Qt.ShiftModifier:
