@@ -1,9 +1,9 @@
 import signal
 
-from PyQt5.QtWidgets import QApplication, QWidget, QAction
-from PyQt5.QtGui import QPainter, QFont, QKeySequence, QPolygon, \
-    QResizeEvent, QPaintEvent, QKeyEvent
-from PyQt5.QtCore import Qt, QSize, QRect, QMargins, QPoint, QPointF
+from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtGui import QPainter, QFont, QKeySequence, QPolygon, \
+    QResizeEvent, QPaintEvent, QKeyEvent, QAction
+from PyQt6.QtCore import Qt, QSize, QRect, QMargins, QPoint, QPointF
 
 
 def print_xrandr_cmd(screen_size: QSize, safezone: QRect, output: str) -> None:
@@ -31,9 +31,12 @@ class MainWindow(QWidget):
         self.setWindowTitle("Overscan Fix")
         self._safezone: QRect = QRect(0, 0, 1, 1)
 
+        def close_cb() -> None:
+            self.close()
+
         quit_action = QAction('Quit', self)
         quit_action.setShortcut(QKeySequence('Esc'))
-        quit_action.triggered.connect(self.close)
+        quit_action.triggered.connect(close_cb)
         self.addAction(quit_action)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -42,8 +45,8 @@ class MainWindow(QWidget):
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
 
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(Qt.black)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(Qt.GlobalColor.black)
 
         painter.drawRect(self._safezone)
 
@@ -57,7 +60,7 @@ class MainWindow(QWidget):
         w = self._safezone.width()
         h = self._safezone.height()
 
-        painter.setPen(Qt.gray)
+        painter.setPen(Qt.GlobalColor.gray)
 
         painter.drawEllipse(left + tdist, top + tdist, w - tdist * 2, h - tdist * 2)
 
@@ -87,12 +90,12 @@ class MainWindow(QWidget):
                       ]),
             ]
 
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(Qt.red)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(Qt.GlobalColor.red)
         for triangle in triangles:
             painter.drawPolygon(triangle)
 
-        painter.setPen(Qt.white)
+        painter.setPen(Qt.GlobalColor.white)
         painter.setFont(QFont("Arial", 20))
         text_x = self.width() / 2 - 200
         painter.drawText(QPointF(text_x, self.height() / 2 + 32),
@@ -104,7 +107,7 @@ class MainWindow(QWidget):
                          f"border left: {left} right: {self.width() - right - 1} "
                          f"top: {top} bottom: {self.height() - bottom - 1}")
 
-        painter.setPen(Qt.gray)
+        painter.setPen(Qt.GlobalColor.gray)
         painter.setFont(QFont("Arial", 20))
         painter.drawText(QPointF(text_x, self.height() / 2 - 32),
                          "Use cursor keys and shift to adjust borders, Esc to quit")
@@ -112,24 +115,24 @@ class MainWindow(QWidget):
                          "Adjust until only a thin white line is visible at the edge")
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.modifiers() & Qt.ShiftModifier:
-            if event.key() == Qt.Key_Left:
-                self._safezone += QMargins(1, 0, 0, 0)
-            elif event.key() == Qt.Key_Right:
-                self._safezone += QMargins(0, 0, 1, 0)
-            elif event.key() == Qt.Key_Up:
-                self._safezone += QMargins(0, 1, 0, 0)
-            elif event.key() == Qt.Key_Down:
-                self._safezone += QMargins(0, 0, 0, 1)
+        if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+            if event.key() == Qt.Key.Key_Left:
+                self._safezone = self._safezone.marginsAdded(QMargins(1, 0, 0, 0))
+            elif event.key() == Qt.Key.Key_Right:
+                self._safezone = self._safezone.marginsAdded(QMargins(0, 0, 1, 0))
+            elif event.key() == Qt.Key.Key_Up:
+                self._safezone = self._safezone.marginsAdded(QMargins(0, 1, 0, 0))
+            elif event.key() == Qt.Key.Key_Down:
+                self._safezone = self._safezone.marginsAdded(QMargins(0, 0, 0, 1))
         else:
-            if event.key() == Qt.Key_Left:
-                self._safezone -= QMargins(1, 0, 0, 0)
-            elif event.key() == Qt.Key_Right:
-                self._safezone -= QMargins(0, 0, 1, 0)
-            elif event.key() == Qt.Key_Up:
-                self._safezone -= QMargins(0, 1, 0, 0)
-            elif event.key() == Qt.Key_Down:
-                self._safezone -= QMargins(0, 0, 0, 1)
+            if event.key() == Qt.Key.Key_Left:
+                self._safezone = self._safezone.marginsRemoved(QMargins(1, 0, 0, 0))
+            elif event.key() == Qt.Key.Key_Right:
+                self._safezone = self._safezone.marginsRemoved(QMargins(0, 0, 1, 0))
+            elif event.key() == Qt.Key.Key_Up:
+                self._safezone = self._safezone.marginsRemoved(QMargins(0, 1, 0, 0))
+            elif event.key() == Qt.Key.Key_Down:
+                self._safezone = self._safezone.marginsRemoved(QMargins(0, 0, 0, 1))
 
         self.update()
 
@@ -144,11 +147,11 @@ def main_entrypoint() -> None:
     app = QApplication([])
     window = MainWindow()
 
-    window.setWindowState(window.windowState() | Qt.WindowFullScreen)
-    # self.setWindowState(self.windowState() & ~Qt.WindowFullScreen)
+    window.setWindowState(window.windowState() | Qt.WindowState.WindowFullScreen)
+    # self.setWindowState(self.windowState() & ~Qt.WindowState.WindowFullScreen)
     window.show()
 
-    app.exec_()
+    app.exec()
 
 
 # EOF #

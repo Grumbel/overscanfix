@@ -2,21 +2,26 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     flake-utils.url = "github:numtide/flake-utils";
+
+    PyQt6-stubs_src.url = "github:python-qt-tools/PyQt6-stubs";
+    PyQt6-stubs_src.flake = false;
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, PyQt6-stubs_src }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         pythonPackages = pkgs.python3Packages;
 
-        PyQt5-stubs = pythonPackages.buildPythonPackage rec {
-          pname = "PyQt5-stubs";
-          version = "5.15.6.0";
-          src = pythonPackages.fetchPypi {
-            inherit pname version;
-            sha256 = "sha256-kScKwj6/OKHcBM2XqoUs0Ir4Lcg5EA5Tla8UR+Pplwc=";
-          };
+        PyQt6-stubs = pythonPackages.buildPythonPackage rec {
+          name = "PyQt5-stubs";
+          src = PyQt6-stubs_src;
+
+          nativeCheckInputs = with pythonPackages; [
+            libcst
+            mypy
+            pyqt6
+          ];
         };
       in rec {
         packages = rec {
@@ -28,53 +33,42 @@
 
             src = ./.;
 
-            doCheck = false;
+            doCheck = true;
 
             makeWrapperArgs = [
               "\${qtWrapperArgs[@]}"
             ];
 
-            preCheck = ''
-              export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
-            '';
-
             checkPhase = ''
               runHook preCheck
               flake8
               mypy -p overscanfix  # -p tests
-              pylint overscanfix  # tests
+              pylint --extension-pkg-whitelist=PyQt6 overscanfix  # tests
               # python3 -m unittest discover -v -s tests/
               runHook postCheck
             '';
 
-            nativeBuildInputs = [
-              pkgs.qt5.wrapQtAppsHook
+            nativeBuildInputs = with pkgs; [
+              qt6.wrapQtAppsHook
             ];
 
-            nativeCheckInputs = [
-              PyQt5-stubs
-              pythonPackages.flake8
-              pythonPackages.mypy
-              pythonPackages.pylint
-              pythonPackages.types-setuptools
-              pythonPackages.pip
+            buildInputs = with pkgs; [
+              qt6.qtbase
             ];
 
-            propagatedBuildInputs = [
-              pythonPackages.pyqt5
+            nativeCheckInputs = with pythonPackages; [
+              flake8
+              mypy
+              pylint
+              types-setuptools
+              pip
+            ] ++ [
+              PyQt6-stubs
             ];
-          };
-        };
 
-        devShells = rec {
-          default = overscanfix;
-
-          overscanfix = pkgs.mkShell {
-            inputsFrom = [ packages.overscanfix ];
-            shellHook = ''
-              export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
-              runHook setuptoolsShellHook
-            '';
+            propagatedBuildInputs = with pythonPackages; [
+              pyqt6
+            ];
           };
         };
       }
