@@ -1,11 +1,12 @@
 import signal
 
 from PyQt5.QtWidgets import QApplication, QWidget, QAction
-from PyQt5.QtGui import QPainter, QBrush, QFont, QKeySequence, QPolygon
-from PyQt5.QtCore import Qt, QRect, QMargins, QPoint
+from PyQt5.QtGui import QPainter, QFont, QKeySequence, QPolygon, \
+    QResizeEvent, QPaintEvent, QKeyEvent
+from PyQt5.QtCore import Qt, QSize, QRect, QMargins, QPoint, QPointF
 
 
-def print_xrandr_cmd(screen_size: QRect, safezone: QRect) -> None:
+def print_xrandr_cmd(screen_size: QSize, safezone: QRect, output: str) -> None:
     sx = screen_size.width() / safezone.width()
     sy = screen_size.height() / safezone.height()
 
@@ -13,7 +14,6 @@ def print_xrandr_cmd(screen_size: QRect, safezone: QRect) -> None:
     top = safezone.top()
 
     # FIXME: Get the correct output and mode names
-    output = "HDMI-1"
     mode = f"{screen_size.width()}x{screen_size.height()}"
     fb = f"{screen_size.width()}x{screen_size.height()}"
     print("xrandr " +
@@ -36,10 +36,10 @@ class MainWindow(QWidget):
         quit_action.triggered.connect(self.close)
         self.addAction(quit_action)
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:
         self._safezone = QRect(0, 0, self.width(), self.height())
 
-    def paintEvent(self, event) -> None:
+    def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
 
         painter.setPen(Qt.NoPen)
@@ -95,22 +95,23 @@ class MainWindow(QWidget):
         painter.setPen(Qt.white)
         painter.setFont(QFont("Arial", 20))
         text_x = self.width() / 2 - 200
-        painter.drawText(text_x, self.height() / 2 + 32,
+        painter.drawText(QPointF(text_x, self.height() / 2 + 32),
                          f"size: {w}x{h}")
-        painter.drawText(text_x, self.height() / 2 + 64,
+        painter.drawText(QPointF(text_x, self.height() / 2 + 64),
                          f"pos: {left}, {top}")
 
-        painter.drawText(text_x, self.height() / 2 + 96,
-                         f"border left: {left} right: {self.width() - right - 1} top: {top} bottom: {self.height() - bottom - 1}")
+        painter.drawText(QPointF(text_x, self.height() / 2 + 96),
+                         f"border left: {left} right: {self.width() - right - 1} "
+                         f"top: {top} bottom: {self.height() - bottom - 1}")
 
         painter.setPen(Qt.gray)
-        painter.setFont(QFont("Arial", 14))
-        painter.drawText(text_x, self.height() / 2 - 32,
-                         f"Use cursor keys and shift to adjust borders, Esc to quit")
-        painter.drawText(text_x, self.height() / 2 - 64,
+        painter.setFont(QFont("Arial", 20))
+        painter.drawText(QPointF(text_x, self.height() / 2 - 32),
+                         "Use cursor keys and shift to adjust borders, Esc to quit")
+        painter.drawText(QPointF(text_x, self.height() / 2 - 64),
                          "Adjust until only a thin white line is visible at the edge")
 
-    def keyPressEvent(self, event) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.modifiers() & Qt.ShiftModifier:
             if event.key() == Qt.Key_Left:
                 self._safezone += QMargins(1, 0, 0, 0)
@@ -132,10 +133,10 @@ class MainWindow(QWidget):
 
         self.update()
 
-        print_xrandr_cmd(self.screen().size(), self._safezone)
+        print_xrandr_cmd(self.screen().size(), self._safezone, self.screen().name())
 
 
-def main_entrypoint():
+def main_entrypoint() -> None:
     # Allow Ctrl-C killing of the Qt app, see:
     # http://stackoverflow.com/questions/4938723/
     signal.signal(signal.SIGINT, signal.SIG_DFL)
